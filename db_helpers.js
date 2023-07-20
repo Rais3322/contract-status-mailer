@@ -6,7 +6,7 @@ const insertNewRecords = async (db, table, data, key, additKey) => {
 	const newRecords = data.filter((newRecord) => {
 		return !existingRecords.some((existingRecord) => {
 			return (
-				(existingRecord[key] === newRecord[key]) 
+				(existingRecord[key] === newRecord[key])
 				&&
 				(existingRecord[additKey] === newRecord[additKey])
 			);
@@ -14,16 +14,20 @@ const insertNewRecords = async (db, table, data, key, additKey) => {
 	});
 
 	newRecords.forEach(newRecord => {
-		db[table].push(newRecord);		
+		db[table].push(newRecord);
 	});
 };
 
-const updateRecords = async (db, table, data, key) => {
+const updateRecords = async (db, table, data, key, additKey) => {
 	const existingRecords = db[table];
-	
+
 	data.forEach(upToDateRecord => {
 		const recordToUpdate = existingRecords.find((existingRecord) => {
-			return existingRecord[key] === upToDateRecord[key];
+			return (
+				(existingRecord[key] === upToDateRecord[key])
+				&
+				(existingRecord[additKey] === upToDateRecord[additKey])
+			);
 		});
 
 		if (recordToUpdate) {

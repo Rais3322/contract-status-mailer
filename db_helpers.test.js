@@ -88,7 +88,7 @@ describe('insertNewRecords:', () => {
 					"id": "1",
 					"name": "employee1",
 					"status": "hired"
-				}, 
+				},
 				{
 					"id": "2",
 					"name": "employee3",
@@ -106,7 +106,7 @@ describe('insertNewRecords:', () => {
 				"id": "1",
 				"name": "employee1",
 				"status": "hired"
-			}, 
+			},
 			{
 				"id": "2",
 				"name": "employee2",
@@ -267,7 +267,7 @@ describe('insertNewRecords:', () => {
 });
 
 describe('updateRecords:', () => {
-	test('should rewrite whole record if it has changed', async () => {
+	test('should rewrite whole record with one key if it has changed', async () => {
 		let dbFile = {
 			"employees": [
 				{
@@ -294,6 +294,49 @@ describe('updateRecords:', () => {
 				"status": "hired"
 			},
 			{
+				"name": "employee3",
+				"status": "fired"
+			}
+		];
+
+		await updateRecords(dbFile, 'employees', employeesNew, 'name');
+
+		expect(dbFile['employees']).toStrictEqual(employeesNew);
+	});
+
+	test('should rewrite whole record with key pair if it has changed', async () => {
+		let dbFile = {
+			"employees": [
+				{
+					"id": "1",
+					"name": "employee1",
+					"status": "hired"
+				},
+				{
+					"id": "2",
+					"name": "employee2",
+					"status": "fired"
+				},
+				{
+					"id": "3",
+					"name": "employee3",
+					"status": "fired"
+				}
+			]
+		};
+		let employeesNew = [
+			{
+				"id": "1",
+				"name": "employee1",
+				"status": "hired"
+			},
+			{
+				"id": "2",
+				"name": "employee2",
+				"status": "hired"
+			},
+			{
+				"id": "3",
 				"name": "employee3",
 				"status": "fired"
 			}
@@ -394,6 +437,54 @@ describe('updateRecords:', () => {
 		expect(dbFile.tasks).toEqual(tasksOrig);
 	});
 
+	test('should not add new records to the table', async () => {
+		let dbFile = {
+			"employees": [
+				{
+					"id": "1",
+					"name": "employee1",
+					"status": "hired"
+				},
+				{
+					"id": "2",
+					"name": "employee2",
+					"status": "fired"
+				},
+				{
+					"id": "3",
+					"name": "employee3",
+					"status": "fired"
+				}
+			]
+		};
+		let employeesExp = dbFile['employees']
+		let employeesNew = [
+			{
+				"id": "1",
+				"name": "employee1",
+				"status": "hired"
+			},
+			{
+				"id": "2",
+				"name": "employee2",
+				"status": "hired"
+			},
+			{
+				"id": "4",
+				"name": "employee4",
+				"status": "fired"
+			},
+			{
+				"name": "employee5",
+				"status": "hired"
+			}
+		];
+
+		await updateRecords(dbFile, 'employees', employeesNew, 'name');
+
+		expect(dbFile['employees']).toStrictEqual(employeesExp);
+	});
+
 	test('should throw an error if the table is missing in db', async () => {
 		let dbEmpty = {};
 		let employeesNew = [
@@ -427,7 +518,7 @@ describe('writeDBData:', () => {
 			}
 		]
 	};
-	
+
 	beforeEach(() => {
 		fs.writeFileSync('test.json', '');
 	});
@@ -451,8 +542,8 @@ describe('writeDBData:', () => {
 		await writeDBData(dbFile, 'test.json');
 
 		const fileExists = await fs.promises.access('test.json')
-		.then(() => true)
-		.catch(() => false);
+			.then(() => true)
+			.catch(() => false);
 
 		expect(fileExists).toBe(true);
 	});

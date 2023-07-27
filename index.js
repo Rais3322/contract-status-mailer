@@ -1,8 +1,8 @@
 const path = require('path');
 const dotenv = require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 const parse = require('./parse_helper');
-const models = require('./models');
-const { connectDB, addRecord } = require('./db_helper');
+const { Customer, Contract } = require('./db_models');
+const { connectDB, addRecord, updateRecord, disconnectDB, retrieveRecord } = require('./db_helper');
 const { authorize, fetchGoogleSheetsValue } = require('./google_helper');
 
 const parseData = async (rawResponse, parseType) => {
@@ -12,16 +12,43 @@ const parseData = async (rawResponse, parseType) => {
 		const parsedValue = await parse[parseType](rawValue);
 		parsedValues.push(parsedValue);
 	};
+
 	return parsedValues;
 };
 
+const mergeCustomers = async (customers) => {
+	const result = customers.reduce((accumulator, customer) => {
+		const existingItem = accumulator.find((item) => item.ITN === customer.ITN);
+		if (existingItem) {
+			if (!existingItem.orgName.includes(customer.orgName)) {
+				existingItem.orgName.push(customer.orgName);
+			}
+			if (!existingItem.email.includes(customer.email)) {
+				existingItem.email.push(customer.email);
+			}
+		} else {
+			accumulator.push({
+				orgName: [customer.orgName],
+				ITN: customer.ITN,
+				email: [customer.email],
+				district: customer.district,
+			});
+		}
+
+		return accumulator;
+	}, []);
+
+	return result;
+};
+
 const main = async () => {
-	const googleClient = await authorize().then(console.log('Authorized!'));
+	const googleClient = await authorize();
+
 	const [fetchedContracts, fetchedCustomers] = await Promise.all([
 		fetchGoogleSheetsValue(
 			googleClient,
 			process.env.CONTRACTS_SPREADSHEET,
-			'Договора 2023!D5:L'
+			'Договора 2023!A5:L'
 		),
 		fetchGoogleSheetsValue(
 			googleClient,
@@ -29,18 +56,28 @@ const main = async () => {
 			'ЛИЦЕНЗИИ!C2:F'
 		)
 	]);
+
 	const [parsedContracts, parsedCustomers] = await Promise.all([
 		parseData(fetchedContracts, 'parseContracts'),
 		parseData(fetchedCustomers, 'parseCustomers')
-	]); 
-	connectDB(process.env.DB_PATH);
-	const ContractData = {
-		orgName: 'Муниципальное бюджетное общеобразовательное учреждение городского округа Балашиха «школа № 27»',
-    ITN: '5001023271/500101001',
-    email: 'school27bal@mail.ru',
-    district: 'Балашиха'
-	}
-	addRecord(models.Customer, ContractData);
+	]);
+
+	const mergedCustomers = await mergeCustomers(parsedCustomers);
+
+	await connectDB(process.env.DB_PATH);
+
+	for (const parsedContract of parsedContracts) {
+		await addRecord(Contract, parsedContract, 'uniqueField', () => {
+
+		});
+		await updateRecord(Contract, parsedContract, 'uniqueField');
+	};
+	for (const mergedCustomer of mergedCustomers) {
+		await addRecord(Customer, mergedCustomer, 'ITN');
+		await updateRecord(Customer, mergedCustomer, 'ITN');
+	};
+	
+	await disconnectDB();
 };
 
 main();

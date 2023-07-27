@@ -1,43 +1,48 @@
 const mongoose = require('mongoose');
 
-const Schema = mongoose.Schema;
-const ObjectId = Schema.ObjectId;
-
-const contractSchema = new Schema({
-	id: ObjectId,
-	orgName: String,
-	ITN: Number,
-	contractNumber: String,
-	contractDate: Date,
-});
-
-const customerSchema = new Schema({
-	id: ObjectId,
-	orgName: String,
-	ITN: Number,
-	email: String,
-	district: String,
-});
-
-const Contract = mongoose.model("Contract", contractSchema);
-
-const Customer = mongoose.model("Customer", customerSchema);
-
 const connectDB = async (db_path) => {
 	mongoose.connect(db_path, {
 		useNewUrlParser: true,
 		useUnifiedTopology: true,
 	});
-}
+};
 
-const addRecord = async (model, data) => {
-	try {
-		const newRecord = new model(data);
-		await newRecord.save();
-		return newRecord;
-	} catch (error) {
-		throw error;
+const disconnectDB = async () => {
+	mongoose.disconnect();
+};
+
+const addRecord = async (model, record, key, callback) => {
+	if (key !== undefined) {
+		const existingRecord = await model.findOne({ [key]: record[key] });
+		if (!existingRecord) {
+			if (typeof callback === 'function') {
+				callback();
+			};
+			await model.create(record);
+		};
+	} else {
+		const existingRecord = await model.findOne(record);
+		if (!existingRecord) {
+			if (typeof callback === 'function') {
+				callback();
+			};
+			await model.create(record);
+		};
 	};
 };
 
-module.exports = { connectDB, addRecord };
+const updateRecord = async (model, record, key) => {
+	await model.updateOne({ [key]: record[key] }, { $set: record });
+};
+
+const retrieveRecord = async (model, key, criteria) => {
+	let result;
+	if ((key !== undefined) && (criteria !== undefined)) {
+		result = await model.find({ [key]: [criteria] })
+	} else {
+		result = await model.find();
+	};
+	return result;
+};
+
+module.exports = { connectDB, disconnectDB, addRecord, updateRecord, retrieveRecord };

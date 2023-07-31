@@ -16,14 +16,51 @@ const parseData = async (rawResponse, parseType) => {
 	return parsedValues;
 };
 
-const sendContractInfo = async (dst) => {
+const formMessage = async (contract) => {
+	const orgName = contract.orgName;
+	const contractNumber = contract.contractNumber;
+	const contractDate = contract.contractDate;
+	const msgText = `
+		<p>
+			Здравствуйте, уважаемый Заказчик ${orgName}.
+		</p>
+		<strong>
+			Вы получили это письмо в результате подписания Контракта № ${contractNumber} от ${contractDate}.
+		</strong>
+		<p>
+			Коллектив ООО “Технический центр Баланс-Информ” благодарит Вас за доверие в выполнении поставленной задачи. Мы уже начали подготовку к исполнению своих обязательств по Контракту и приложим все усилия, чтобы у Вас остались только позитивные эмоции от нашего взаимодействия.
+		</p>
+		<p>Для возможности максимально оперативного исполнения Контракта просим Вас в ответ на данное письмо сообщить <strong>контактные данные ответственного лица</strong> с Вашей стороны:<br>
+			&nbsp;&nbsp;&nbsp;&nbsp;– ФИО;<br>
+			&nbsp;&nbsp;&nbsp;&nbsp;– должность;<br>
+			&nbsp;&nbsp;&nbsp;&nbsp;– номер телефона (предпочтительнее мобильного).
+		</p>
+		<p>
+			С Уважением к Вам,<br>
+			Коллектив ООО “Технический центр Баланс-Информ”
+		</p>
+		<p>
+			+7(495)212-16-72 | help@bal-inf.ru – Технический отдел<br>
+			+7(499)653-87-07 | b2g@bal-inf.ru – Департамент по работе с заказчиками
+		</p>
+	`;
+
+	return msgText;
+};
+
+const sendContractInfo = async (dst, contract) => {
+	contract = {
+		orgName: 'МБОУ «Школа № 18» (МБДОУ д/с № 19 "Лесная сказка" ИНН 5001041601)',
+		contractNumber: '1',
+		contractDate: '27.07.2023'
+	};
 	const sourceEmail = process.env.GMAIL_USER;
 	const desinationEmail = dst;
 	const subject = 'Информирование по заключенному договору на оказание услуг';
-	const messge = `Sample text`;
+	const message = await formMessage(contract);
 
-	sendGmailMessage(sourceEmail, desinationEmail, subject, messge);
-}
+	sendGmailMessage(sourceEmail, desinationEmail, subject, message);
+};
 
 const main = async () => {
 	const googleClient = await authorize();
@@ -63,7 +100,7 @@ const main = async () => {
 
 	await disconnectDB();
 
-	sendContractInfo('ndi@bal-inf.ru');
+	// sendContractInfo('ndi@bal-inf.ru');
 };
 
 main();

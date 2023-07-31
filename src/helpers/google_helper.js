@@ -82,7 +82,7 @@ const sendGmailMessage = async (src, dst, sub, msg) => {
 		from: src,
 		to: dst,
 		subject: sub,
-		text: msg
+		html: msg
 	};
 
 	try {

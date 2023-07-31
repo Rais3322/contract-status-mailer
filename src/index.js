@@ -1,9 +1,9 @@
 const path = require('path');
-const dotenv = require('dotenv').config({ path: path.resolve(__dirname, '.env') });
-const parse = require('./parse_helper');
-const { Customer, Contract } = require('./db_models');
-const { connectDB, addRecord, updateRecord, disconnectDB, retrieveRecord } = require('./db_helper');
-const { authorize, fetchGoogleSheetsValue } = require('./google_helper');
+const dotenv = require('dotenv').config({ path: path.resolve(__dirname, './env/.env') });
+const parse = require('./helpers/parse_helper');
+const { Customer, Contract } = require('./db/db_models');
+const { connectDB, addRecord, updateRecord, disconnectDB, retrieveRecord } = require('./helpers/db_helper');
+const { authorize, fetchGoogleSheetsValue, sendGmailMessage } = require('./helpers/google_helper');
 
 const parseData = async (rawResponse, parseType) => {
 	const rawValues = rawResponse.data.values;
@@ -16,30 +16,14 @@ const parseData = async (rawResponse, parseType) => {
 	return parsedValues;
 };
 
-const mergeCustomers = async (customers) => {
-	const result = customers.reduce((accumulator, customer) => {
-		const existingItem = accumulator.find((item) => item.ITN === customer.ITN);
-		if (existingItem) {
-			if (!existingItem.orgName.includes(customer.orgName)) {
-				existingItem.orgName.push(customer.orgName);
-			}
-			if (!existingItem.email.includes(customer.email)) {
-				existingItem.email.push(customer.email);
-			}
-		} else {
-			accumulator.push({
-				orgName: [customer.orgName],
-				ITN: customer.ITN,
-				email: [customer.email],
-				district: customer.district,
-			});
-		}
+const sendContractInfo = async (dst) => {
+	const sourceEmail = process.env.GMAIL_USER;
+	const desinationEmail = dst;
+	const subject = 'Информирование по заключенному договору на оказание услуг';
+	const messge = `Sample text`;
 
-		return accumulator;
-	}, []);
-
-	return result;
-};
+	sendGmailMessage(sourceEmail, desinationEmail, subject, messge);
+}
 
 const main = async () => {
 	const googleClient = await authorize();
@@ -62,7 +46,7 @@ const main = async () => {
 		parseData(fetchedCustomers, 'parseCustomers')
 	]);
 
-	const mergedCustomers = await mergeCustomers(parsedCustomers);
+	const mergedCustomers = await parse.mergeCustomers(parsedCustomers);
 
 	await connectDB(process.env.DB_PATH);
 
@@ -76,8 +60,10 @@ const main = async () => {
 		await addRecord(Customer, mergedCustomer, 'ITN');
 		await updateRecord(Customer, mergedCustomer, 'ITN');
 	};
-	
+
 	await disconnectDB();
+
+	sendContractInfo('ndi@bal-inf.ru');
 };
 
 main();

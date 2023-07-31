@@ -1,11 +1,16 @@
 const path = require('path');
+const dotenv = require('dotenv').config({ path: path.resolve(__dirname, './env/.env') });
 const fs = require('fs/promises');
+const nodemailer = require('nodemailer');
 const { authenticate } = require('@google-cloud/local-auth');
 const { google } = require('googleapis');
 
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
-const TOKEN_PATH = path.resolve(__dirname, 'token.json');
-const CREDENTIALS_PATH = path.resolve(__dirname, 'credentials.json');
+const SCOPES = [
+	'https://www.googleapis.com/auth/spreadsheets.readonly',
+	'https://www.googleapis.com/auth/gmail.modify'
+];
+const TOKEN_PATH = path.resolve(__dirname, '../env/token.json');
+const CREDENTIALS_PATH = path.resolve(__dirname, '../env/credentials.json');
 
 const loadSavedCredentials = async () => {
 	try {
@@ -52,11 +57,6 @@ const fetchGoogleSheetsValue = async (auth, spreadsheetId, range) => {
 			spreadsheetId: spreadsheetId,
 			range: range,
 		});
-		// const numRows = response.data.values ? response.data.values.length : 0;
-		// const result = {
-		// 	response: response,
-		// 	numRows: numRows
-		// };
 		return response;
 	} catch (error) {
 		//TODO: handling exception
@@ -65,4 +65,32 @@ const fetchGoogleSheetsValue = async (auth, spreadsheetId, range) => {
 	};
 };
 
-module.exports = { authorize, fetchGoogleSheetsValue }
+const sendGmailMessage = async (src, dst, sub, msg) => {
+	const transporter = nodemailer.createTransport({
+		service: 'gmail',
+		auth: {
+			type: 'login',
+			user: process.env.GMAIL_USER,
+			pass: process.env.GMAIL_PASS,
+		},
+		tls: {
+			rejectUnauthorized: false,
+		}
+	});
+
+	const mailOptions = {
+		from: src,
+		to: dst,
+		subject: sub,
+		text: msg
+	};
+
+	try {
+		const info = await transporter.sendMail(mailOptions);
+		console.log('Email sent:', info.response)
+	} catch (error) {
+		console.error('Error sending email:', error);
+	}
+};
+
+module.exports = { authorize, fetchGoogleSheetsValue, sendGmailMessage }

@@ -16,4 +16,30 @@ const retrievePage = async (uuid, client) => {
 	return response;
 };
 
-module.exports = { authorizeNotion, retrievePage };
+const createNotionComment = async (uuid, client, msg) => {
+	try {
+		const response = await client.comments.create({
+			parent: {
+				page_id: uuid
+			},
+			rich_text: [
+				{
+					text: {
+						content: msg,
+					},
+				},
+			],
+		});
+
+		console.log('Commentary created:', response.parent);
+	} catch (error) {
+		console.error('Error creating commentary:', error);
+	};
+};
+
+const formComment = async (email) => {
+	msgText = `! ТЕСТИРОВАНИЕ РАССЫЛКИ ! Заказчик проинформирован по поводу заключения договора по почтовому адресу: ${email}.`
+	return msgText;
+}
+
+module.exports = { authorizeNotion, retrievePage, createNotionComment, formComment };

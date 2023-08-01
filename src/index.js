@@ -4,7 +4,7 @@ const parse = require('./helpers/parse_helper');
 const { Contract } = require('./db/db_models');
 const { connectDB, addRecord, updateRecord, disconnectDB } = require('./helpers/db_helper');
 const { authorizeGoogle, fetchGoogleSheetsValue } = require('./helpers/google_helper');
-const { authorizeNotion, retrievePage } = require('./helpers/notion_helper');
+const { authorizeNotion, retrievePage, createNotionComment, formComment } = require('./helpers/notion_helper');
 const { sendContractInfo } = require('./helpers/mailing_helper');
 
 const parseData = async (rawResponse, parseType) => {
@@ -29,7 +29,10 @@ const handleContracts = async (contracts, notionClient) => {
 					contract.taskNumber = contractTaskNumber;
 					await addRecord(Contract, contract, 'uniqueField', async () => {
 						console.log(`Contract № ${contract.contractNumber} added to DB`);
-						await sendContractInfo('ndi@bal-inf.ru', contract);
+						await sendContractInfo('ndi@bal-inf.ru', contract, async () => {
+							const commentary = await formComment('ndi@bal-inf.ru');
+							await createNotionComment(notionUUID, notionClient, commentary);
+						});
 					});
 				};
 			};

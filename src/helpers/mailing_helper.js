@@ -43,13 +43,16 @@ const formMessage = async (contract) => {
 	return msgText;
 };
 
-const sendContractInfo = async (dst, contract) => {
+const sendContractInfo = async (dst, contract, callback) => {
 	const sourceEmail = process.env.GMAIL_USER;
 	const desinationEmail = dst;
 	const subject = await formSubject(contract);
 	const message = await formMessage(contract);
 
 	sendGmailMessage(sourceEmail, desinationEmail, subject, message);
+	if (typeof callback === 'function') {
+		callback();
+	};
 };
 
 module.exports = { sendContractInfo };

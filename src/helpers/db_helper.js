@@ -1,14 +1,24 @@
 const mongoose = require('mongoose');
 
 const connectDB = async (db_path) => {
-	mongoose.connect(db_path, {
-		useNewUrlParser: true,
-		useUnifiedTopology: true,
-	});
+	try {
+		mongoose.connect(db_path, {
+			useNewUrlParser: true,
+			useUnifiedTopology: true,
+		});
+		console.log('DB connected');
+	} catch (error) {
+		console.error('Error connecting DB:', error);
+	};
 };
 
 const disconnectDB = async () => {
-	mongoose.disconnect();
+	try {
+		mongoose.disconnect();
+		console.log('DB disconnected');
+	} catch (error) {
+		console.error('Error disconnecting DB:', error);
+	};
 };
 
 const addRecord = async (model, record, key, callback) => {

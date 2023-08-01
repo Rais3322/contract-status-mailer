@@ -1,9 +1,11 @@
 const path = require('path');
 const dotenv = require('dotenv').config({ path: path.resolve(__dirname, './env/.env') });
+const moment = require('moment');
 const parse = require('./helpers/parse_helper');
-const { Customer, Contract } = require('./db/db_models');
-const { connectDB, addRecord, updateRecord, disconnectDB, retrieveRecord } = require('./helpers/db_helper');
-const { authorize, fetchGoogleSheetsValue, sendGmailMessage } = require('./helpers/google_helper');
+const { Contract } = require('./db/db_models');
+const { connectDB, addRecord, updateRecord, disconnectDB } = require('./helpers/db_helper');
+const { authorizeGoogle, fetchGoogleSheetsValue, sendGmailMessage } = require('./helpers/google_helper');
+const { authorizeNotion, retrievePage } = require('./helpers/notion_helper');
 
 const parseData = async (rawResponse, parseType) => {
 	const rawValues = rawResponse.data.values;
@@ -16,32 +18,42 @@ const parseData = async (rawResponse, parseType) => {
 	return parsedValues;
 };
 
+const formSubject = async (contract) => {
+	const contractNumber = contract.contractNumber;
+	const contractDate = moment(contract.contractDate).format('DD.MM.YYYY');
+	const msgSub = `Информирование по заключенному договору на оказание услуг № ${contractNumber} от ${contractDate}`;
+	
+	return msgSub
+}
+
 const formMessage = async (contract) => {
 	const orgName = contract.orgName;
 	const contractNumber = contract.contractNumber;
-	const contractDate = contract.contractDate;
+	const contractDate = moment(contract.contractDate).format('DD.MM.YYYY');
+	const taskNumber = contract.taskNumber
 	const msgText = `
 		<p>
-			Здравствуйте, уважаемый Заказчик ${orgName}.
+			&nbsp;&nbsp;&nbsp;&nbsp;Здравствуйте, уважаемый Заказчик ${orgName}.
 		</p>
 		<strong>
-			Вы получили это письмо в результате подписания Контракта № ${contractNumber} от ${contractDate}.
+			&nbsp;&nbsp;&nbsp;&nbsp;Вы получили это письмо в результате подписания Контракта № ${contractNumber} от ${contractDate}, этапы исполнения которого Вы можете отслеживать по Вашему уникальному номеру заявки ${taskNumber}.
 		</strong>
 		<p>
-			Коллектив ООО “Технический центр Баланс-Информ” благодарит Вас за доверие в выполнении поставленной задачи. Мы уже начали подготовку к исполнению своих обязательств по Контракту и приложим все усилия, чтобы у Вас остались только позитивные эмоции от нашего взаимодействия.
-		</p>
-		<p>Для возможности максимально оперативного исполнения Контракта просим Вас в ответ на данное письмо сообщить <strong>контактные данные ответственного лица</strong> с Вашей стороны:<br>
-			&nbsp;&nbsp;&nbsp;&nbsp;– ФИО;<br>
-			&nbsp;&nbsp;&nbsp;&nbsp;– должность;<br>
-			&nbsp;&nbsp;&nbsp;&nbsp;– номер телефона (предпочтительнее мобильного).
+			&nbsp;&nbsp;&nbsp;&nbsp;Коллектив ООО “Технический центр Баланс-Информ” благодарит Вас за доверие в выполнении поставленной задачи. Мы уже начали подготовку к исполнению своих обязательств по Контракту и приложим все усилия, чтобы у Вас остались только позитивные эмоции от нашего взаимодействия.
 		</p>
 		<p>
-			С Уважением к Вам,<br>
-			Коллектив ООО “Технический центр Баланс-Информ”
+			&nbsp;&nbsp;&nbsp;&nbsp;Для возможности максимально оперативного исполнения Контракта просим Вас в ответ на данное письмо сообщить <strong>контактные данные ответственного лица</strong> с Вашей стороны:<br>
+			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;– ФИО;<br>
+			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;– должность;<br>
+			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;– номер телефона (предпочтительнее мобильного).
 		</p>
 		<p>
-			+7(495)212-16-72 | help@bal-inf.ru – Технический отдел<br>
-			+7(499)653-87-07 | b2g@bal-inf.ru – Департамент по работе с заказчиками
+			&nbsp;&nbsp;&nbsp;&nbsp;С Уважением к Вам,<br>
+			&nbsp;&nbsp;&nbsp;&nbsp;Коллектив ООО “Технический центр Баланс-Информ”
+		</p>
+		<p>
+			&nbsp;&nbsp;&nbsp;&nbsp;+7(495)212-16-72 | help@bal-inf.ru – Технический отдел<br>
+			&nbsp;&nbsp;&nbsp;&nbsp;+7(499)653-87-07 | b2g@bal-inf.ru – Департамент по работе с заказчиками
 		</p>
 	`;
 
@@ -49,58 +61,48 @@ const formMessage = async (contract) => {
 };
 
 const sendContractInfo = async (dst, contract) => {
-	contract = {
-		orgName: 'МБОУ «Школа № 18» (МБДОУ д/с № 19 "Лесная сказка" ИНН 5001041601)',
-		contractNumber: '1',
-		contractDate: '27.07.2023'
-	};
 	const sourceEmail = process.env.GMAIL_USER;
 	const desinationEmail = dst;
-	const subject = 'Информирование по заключенному договору на оказание услуг';
+	const subject = await formSubject(contract);
 	const message = await formMessage(contract);
 
 	sendGmailMessage(sourceEmail, desinationEmail, subject, message);
 };
 
 const main = async () => {
-	const googleClient = await authorize();
+	const googleClient = await authorizeGoogle();
+	const notionClient = await authorizeNotion();
 
-	const [fetchedContracts, fetchedCustomers] = await Promise.all([
-		fetchGoogleSheetsValue(
-			googleClient,
-			process.env.CONTRACTS_SPREADSHEET,
-			'Договора 2023!A5:L'
-		),
-		fetchGoogleSheetsValue(
-			googleClient,
-			process.env.CUSTOMERS_SPREADSHEET,
-			'ЛИЦЕНЗИИ!C2:F'
-		)
-	]);
+	const fetchedContracts = await fetchGoogleSheetsValue(
+		googleClient,
+		process.env.CONTRACTS_SPREADSHEET,
+		process.env.CONTRACTS_RANGE,
+	);
 
-	const [parsedContracts, parsedCustomers] = await Promise.all([
-		parseData(fetchedContracts, 'parseContracts'),
-		parseData(fetchedCustomers, 'parseCustomers')
-	]);
-
-	const mergedCustomers = await parse.mergeCustomers(parsedCustomers);
+	const parsedContracts = await parseData(fetchedContracts, 'parseContracts');
 
 	await connectDB(process.env.DB_PATH);
 
 	for (const parsedContract of parsedContracts) {
-		await addRecord(Contract, parsedContract, 'uniqueField', () => {
-
-		});
+		if ((parsedContract.uniqueField) && (parsedContract.taskLink)) {
+			const notionUUID = await parse.parseNotionLink(parsedContract.taskLink);
+			if (notionUUID) {
+				const contractTask = await retrievePage(notionUUID, notionClient);
+				const contractTaskNumber = await parse.parseNotionTaskNumber(contractTask);
+				if(contractTaskNumber) {
+					parsedContract.taskNumber = contractTaskNumber;
+					await addRecord(Contract, parsedContract, 'uniqueField', async () => {
+						console.log(`Contract № ${parsedContract.contractNumber} added to DB`);
+						await sendContractInfo('ndi@bal-inf.ru', parsedContract);
+					});
+				}
+			}
+		}
 		await updateRecord(Contract, parsedContract, 'uniqueField');
-	};
-	for (const mergedCustomer of mergedCustomers) {
-		await addRecord(Customer, mergedCustomer, 'ITN');
-		await updateRecord(Customer, mergedCustomer, 'ITN');
 	};
 
 	await disconnectDB();
 
-	// sendContractInfo('ndi@bal-inf.ru');
 };
 
 main();

@@ -35,7 +35,7 @@ const saveCredentials = async (client) => {
 	await fs.writeFile(TOKEN_PATH, payload);
 };
 
-const authorize = async () => {
+const authorizeGoogle = async () => {
 	let client = await loadSavedCredentials();
 	if (client) {
 		return client;
@@ -93,4 +93,4 @@ const sendGmailMessage = async (src, dst, sub, msg) => {
 	}
 };
 
-module.exports = { authorize, fetchGoogleSheetsValue, sendGmailMessage }
+module.exports = { authorizeGoogle, fetchGoogleSheetsValue, sendGmailMessage }

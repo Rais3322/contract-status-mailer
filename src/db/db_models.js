@@ -6,12 +6,13 @@ const ObjectId = Schema.ObjectId;
 const contractSchema = new Schema({
 	id: ObjectId,
 	uniqueField: { type: String, unique: true },
-	system: String,
-	project: String,
 	orgName: String,
 	ITN: Number,
 	contractNumber: String,
 	contractDate: Date,
+	email: String,
+	taskLink: String,
+	taskNumber: String
 });
 
 const customerSchema = new Schema({
@@ -24,6 +25,4 @@ const customerSchema = new Schema({
 
 const Contract = mongoose.model("Contract", contractSchema);
 
-const Customer = mongoose.model("Customer", customerSchema);
-
-module.exports = { Contract, Customer };
+module.exports = { Contract };

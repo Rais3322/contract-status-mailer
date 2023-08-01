@@ -25,7 +25,7 @@ const handleContracts = async (contracts, notionClient) => {
 			if (notionUUID) {
 				const contractTask = await retrievePage(notionUUID, notionClient);
 				const contractTaskNumber = await parse.parseNotionTaskNumber(contractTask);
-				if(contractTaskNumber) {
+				if (contractTaskNumber) {
 					contract.taskNumber = contractTaskNumber;
 					await addRecord(Contract, contract, 'uniqueField', async () => {
 						console.log(`Contract № ${contract.contractNumber} added to DB`);

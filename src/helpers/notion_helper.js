@@ -8,12 +8,12 @@ const authorizeNotion = async () => {
 	});
 
 	return notion;
-}
+};
 
 const retrievePage = async (uuid, client) => {
 	const response = await client.pages.retrieve({ page_id: uuid })
 
 	return response;
-}
+};
 
 module.exports = { authorizeNotion, retrievePage };

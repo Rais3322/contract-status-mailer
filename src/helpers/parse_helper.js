@@ -1,6 +1,6 @@
 const moment = require('moment');
 
-const TASK_NUMBER = 'Номер задачи'
+const TASK_NUMBER = 'Номер задачи';
 
 const parseContracts = async (rawValue) => {
 	let parsedDate = '';
@@ -28,7 +28,7 @@ const parseCustomers = async (rawValue) => {
 		district: rawValue[1]
 	};
 
-	return parsedValue
+	return parsedValue;
 };
 
 const parseDate = async (rawDate) => {
@@ -41,21 +41,21 @@ const parseDate = async (rawDate) => {
 		const strDate = '';
 
 		return strDate;
-	}
-}
+	};
+};
 
 const parseNotionLink = async (rawLink) => {
 	const regex = /([0-9a-f]{32})/i;
 	const match = rawLink.match(regex);
 
 	return match ? match[0] : null;
-}
+};
 
 const parseNotionTaskNumber = async (rawResponse) => {
 	const taskNumber = rawResponse.properties[TASK_NUMBER].number;
 
-	return taskNumber
-}
+	return taskNumber;
+};
 
 const mergeCustomers = async (customers) => {
 	const result = customers.reduce((accumulator, customer) => {
@@ -74,7 +74,7 @@ const mergeCustomers = async (customers) => {
 				email: [customer.email],
 				district: customer.district,
 			});
-		}
+		};
 
 		return accumulator;
 	}, []);
@@ -83,4 +83,4 @@ const mergeCustomers = async (customers) => {
 };
 
 
-module.exports = { parseContracts, parseCustomers, parseNotionLink, parseNotionTaskNumber, mergeCustomers }
+module.exports = { parseContracts, parseCustomers, parseNotionLink, parseNotionTaskNumber, mergeCustomers };

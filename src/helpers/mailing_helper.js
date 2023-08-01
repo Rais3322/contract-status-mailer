@@ -5,15 +5,15 @@ const formSubject = async (contract) => {
 	const contractNumber = contract.contractNumber;
 	const contractDate = moment(contract.contractDate).format('DD.MM.YYYY');
 	const msgSub = `Информирование по заключенному договору на оказание услуг № ${contractNumber} от ${contractDate}`;
-	
-	return msgSub
+
+	return msgSub;
 }
 
 const formMessage = async (contract) => {
 	const orgName = contract.orgName;
 	const contractNumber = contract.contractNumber;
 	const contractDate = moment(contract.contractDate).format('DD.MM.YYYY');
-	const taskNumber = contract.taskNumber
+	const taskNumber = contract.taskNumber;
 	const msgText = `
 		<p>
 			&nbsp;&nbsp;&nbsp;&nbsp;Здравствуйте, уважаемый Заказчик ${orgName}.
@@ -52,4 +52,4 @@ const sendContractInfo = async (dst, contract) => {
 	sendGmailMessage(sourceEmail, desinationEmail, subject, message);
 };
 
-module.exports = { sendContractInfo }
+module.exports = { sendContractInfo };

@@ -1,5 +1,6 @@
 const moment = require('moment');
 const { sendGmailMessage } = require('./google_helper');
+const { createNotionComment, formComment } = require('./notion_helper');
 
 const formSubject = async (contract) => {
 	const contractNumber = contract.contractNumber;
@@ -43,16 +44,16 @@ const formMessage = async (contract) => {
 	return msgText;
 };
 
-const sendContractInfo = async (dst, contract, callback) => {
+const sendContractInfo = async (contract, notionUUID, notionClient) => {
 	const sourceEmail = process.env.GMAIL_USER;
-	const desinationEmail = dst;
+	const desinationEmail = contract.email;
 	const subject = await formSubject(contract);
 	const message = await formMessage(contract);
 
-	sendGmailMessage(sourceEmail, desinationEmail, subject, message);
-	if (typeof callback === 'function') {
-		callback();
-	};
+	sendGmailMessage(sourceEmail, desinationEmail, subject, message, async () => {
+		const commentary = await formComment(contract.email);
+		await createNotionComment(notionUUID, notionClient, commentary);
+	});
 };
 
 module.exports = { sendContractInfo };

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const logger = require('../log/logger');
 
 const connectDB = async (db_path) => {
 	try {
@@ -6,18 +7,18 @@ const connectDB = async (db_path) => {
 			useNewUrlParser: true,
 			useUnifiedTopology: true,
 		});
-		console.log('DB connected');
+		logger.info('DB connected');
 	} catch (error) {
-		console.error('Error connecting DB:', error);
+		logger.error('Error connecting DB:', error);
 	};
 };
 
 const disconnectDB = async () => {
 	try {
 		mongoose.disconnect();
-		console.log('DB disconnected');
+		logger.info('DB disconnected');
 	} catch (error) {
-		console.error('Error disconnecting DB:', error);
+		logger.error('Error disconnecting DB:', error);
 	};
 };
 

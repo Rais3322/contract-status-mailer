@@ -1,11 +1,15 @@
 const path = require('path');
 const dotenv = require('dotenv').config({ path: path.resolve(__dirname, './env/.env') });
 const parse = require('./helpers/parse_helper');
+const logger = require('./log/logger');
 const { Contract } = require('./db/db_models');
 const { connectDB, addRecord, updateRecord, disconnectDB } = require('./helpers/db_helper');
 const { authorizeGoogle, fetchGoogleSheetsValue } = require('./helpers/google_helper');
-const { authorizeNotion, retrievePage, createNotionComment, formComment } = require('./helpers/notion_helper');
+const { authorizeNotion, retrievePage } = require('./helpers/notion_helper');
 const { sendContractInfo } = require('./helpers/mailing_helper');
+
+const UNIQUE_FIELD = 'uniqueField';
+const PARSE_CONTRACTS = 'parseContracts'
 
 const parseData = async (rawResponse, parseType) => {
 	const rawValues = rawResponse.data.values;
@@ -20,24 +24,21 @@ const parseData = async (rawResponse, parseType) => {
 
 const handleContracts = async (contracts, notionClient) => {
 	for (const contract of contracts) {
-		if ((contract.uniqueField) && (contract.taskLink)) {
+		if ((contract.uniqueField) && (contract.taskLink) && (contract.email)) {
 			const notionUUID = await parse.parseNotionLink(contract.taskLink);
 			if (notionUUID) {
 				const contractTask = await retrievePage(notionUUID, notionClient);
 				const contractTaskNumber = await parse.parseNotionTaskNumber(contractTask);
 				if (contractTaskNumber) {
 					contract.taskNumber = contractTaskNumber;
-					await addRecord(Contract, contract, 'uniqueField', async () => {
-						console.log(`Contract № ${contract.contractNumber} added to DB`);
-						await sendContractInfo('ndi@bal-inf.ru', contract, async () => {
-							const commentary = await formComment('ndi@bal-inf.ru');
-							await createNotionComment(notionUUID, notionClient, commentary);
-						});
+					await addRecord(Contract, contract, UNIQUE_FIELD, async () => {
+						logger.info(`Contract № ${contract.contractNumber} added to DB`);
+						await sendContractInfo(contract, notionUUID, notionClient);
 					});
 				};
 			};
 		};
-		await updateRecord(Contract, contract, 'uniqueField');
+		await updateRecord(Contract, contract, UNIQUE_FIELD);
 	};
 };
 
@@ -51,14 +52,13 @@ const main = async () => {
 		process.env.CONTRACTS_RANGE,
 	);
 
-	const parsedContracts = await parseData(fetchedContracts, 'parseContracts');
+	const parsedContracts = await parseData(fetchedContracts, PARSE_CONTRACTS);
 
 	await connectDB(process.env.DB_PATH);
 
 	await handleContracts(parsedContracts, notionClient);
 
 	await disconnectDB();
-
 };
 
 main();

@@ -1,6 +1,7 @@
 const path = require('path');
 const dotenv = require('dotenv').config({ path: path.resolve(__dirname, './env/.env') });
 const { Client } = require('@notionhq/client');
+const logger = require('../log/logger');
 
 const authorizeNotion = async () => {
 	const notion = new Client({
@@ -31,9 +32,9 @@ const createNotionComment = async (uuid, client, msg) => {
 			],
 		});
 
-		console.log('Commentary created:', response.parent);
+		logger.info('Commentary created:', response.parent);
 	} catch (error) {
-		console.error('Error creating commentary:', error);
+		logger.error('Error creating commentary:', error);
 	};
 };
 

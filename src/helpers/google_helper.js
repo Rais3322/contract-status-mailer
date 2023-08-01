@@ -4,6 +4,7 @@ const fs = require('fs/promises');
 const nodemailer = require('nodemailer');
 const { authenticate } = require('@google-cloud/local-auth');
 const { google } = require('googleapis');
+const logger = require('../log/logger');
 
 const SCOPES = [
 	'https://www.googleapis.com/auth/spreadsheets.readonly',
@@ -60,12 +61,12 @@ const fetchGoogleSheetsValue = async (auth, spreadsheetId, range) => {
 		return response;
 	} catch (error) {
 		//TODO: handling exception
-		console.log(error.message);
+		logger.error(error.message);
 		throw error;
 	};
 };
 
-const sendGmailMessage = async (src, dst, sub, msg) => {
+const sendGmailMessage = async (src, dst, sub, msg, callback) => {
 	const transporter = nodemailer.createTransport({
 		service: 'gmail',
 		auth: {
@@ -87,9 +88,12 @@ const sendGmailMessage = async (src, dst, sub, msg) => {
 
 	try {
 		const info = await transporter.sendMail(mailOptions);
-		console.log('Email sent:', info.response)
+		logger.info('Email sent:', info.response)
+		if (typeof callback === 'function') {
+			callback();
+		};
 	} catch (error) {
-		console.error('Error sending email:', error);
+		logger.error('Error sending email:', error);
 	};
 };
 

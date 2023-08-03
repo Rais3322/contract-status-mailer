@@ -80,7 +80,7 @@ const sendGmailMessage = async (src, dst, sub, msg, callback) => {
 	});
 
 	const mailOptions = {
-		from: src,
+		from: `Баланс-Информ <${src}>`,
 		to: dst,
 		subject: sub,
 		html: msg

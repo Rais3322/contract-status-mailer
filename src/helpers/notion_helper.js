@@ -39,7 +39,7 @@ const createNotionComment = async (uuid, client, msg) => {
 };
 
 const formComment = async (email) => {
-	msgText = `! ТЕСТИРОВАНИЕ РАССЫЛКИ ! Заказчик проинформирован по поводу заключения договора по почтовому адресу: ${email}.`
+	msgText = `Заказчик проинформирован по поводу заключения договора по почтовому адресу: ${email}.`
 	return msgText;
 }
 

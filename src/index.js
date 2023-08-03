@@ -9,7 +9,7 @@ const { authorizeNotion, retrievePage } = require('./helpers/notion_helper');
 const { sendContractInfo } = require('./helpers/mailing_helper');
 
 const UNIQUE_FIELD = 'uniqueField';
-const PARSE_CONTRACTS = 'parseContracts'
+const PARSE_CONTRACTS = 'parseContracts';
 
 const parseData = async (rawResponse, parseType) => {
 	const rawValues = rawResponse.data.values;

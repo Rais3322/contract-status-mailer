@@ -1,6 +1,6 @@
 const path = require("path");
 const dotenv = require("dotenv").config({
-  path: path.resolve(__dirname, "../env/.env"),
+  path: path.resolve(__dirname, "./env/.env"),
 });
 const axios = require("axios").default;
 const logger = require("../log/logger");

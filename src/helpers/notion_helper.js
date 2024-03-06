@@ -32,9 +32,9 @@ const createNotionComment = async (uuid, client, msg) => {
 			],
 		});
 
-		logger.info('Commentary created:', response.parent);
+		logger.info('Commentary created', response.parent);
 	} catch (error) {
-		logger.error('Error creating commentary:', error);
+		logger.error('Error creating commentary', error);
 	};
 };
 

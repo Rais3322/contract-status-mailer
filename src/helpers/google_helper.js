@@ -88,12 +88,12 @@ const sendGmailMessage = async (src, dst, sub, msg, callback) => {
 
 	try {
 		const info = await transporter.sendMail(mailOptions);
-		logger.info('Email sent:', info.response)
+		logger.info('Email sent', info.response)
 		if (typeof callback === 'function') {
 			callback();
 		};
 	} catch (error) {
-		logger.error('Error sending email:', error);
+		logger.error('Error sending email', error);
 	};
 };
 

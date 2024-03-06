@@ -1,6 +1,7 @@
 const moment = require('moment');
 const { sendGmailMessage } = require('./google_helper');
 const { createNotionComment, formComment } = require('./notion_helper');
+const { fetchOrgName } = require('./kontur_helper');
 
 const formSubject = async (contract) => {
 	const contractNumber = contract.contractNumber;
@@ -11,7 +12,7 @@ const formSubject = async (contract) => {
 }
 
 const formMessage = async (contract) => {
-	const orgName = contract.orgName;
+	const orgName = fetchOrgName(contract.ITN)
 	const contractNumber = contract.contractNumber;
 	const contractDate = moment(contract.contractDate).format('DD.MM.YYYY');
 	const taskNumber = contract.taskNumber;
@@ -50,9 +51,9 @@ const sendContractInfo = async (contract, notionUUID, notionClient) => {
 	const subject = await formSubject(contract);
 	const message = await formMessage(contract);
 
-	sendGmailMessage(sourceEmail, desinationEmail, subject, message, async () => {
+	sendGmailMessage(sourceEmail, 'sad@bal-inf.ru', subject, message, async () => {
 		const commentary = await formComment(contract.email);
-		await createNotionComment(notionUUID, notionClient, commentary);
+		//await createNotionComment(notionUUID, notionClient, commentary);
 	});
 };
 

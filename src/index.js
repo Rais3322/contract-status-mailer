@@ -33,7 +33,7 @@ const handleContracts = async (contracts, notionClient) => {
 					contract.taskNumber = contractTaskNumber;
 					await addRecord(Contract, contract, UNIQUE_FIELD, async () => {
 						logger.info(`Contract № ${contract.contractNumber} added to DB`);
-						await sendContractInfo(contract, notionUUID, notionClient);
+						// await sendContractInfo(contract, notionUUID, notionClient);
 					});
 				};
 			};

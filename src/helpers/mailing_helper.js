@@ -12,7 +12,7 @@ const formSubject = async (contract) => {
 }
 
 const formMessage = async (contract) => {
-	const orgName = fetchOrgName(contract.ITN)
+	const orgName = await fetchOrgName(contract.ITN)
 	const contractNumber = contract.contractNumber;
 	const contractDate = moment(contract.contractDate).format('DD.MM.YYYY');
 	const taskNumber = contract.taskNumber;
@@ -45,16 +45,21 @@ const formMessage = async (contract) => {
 	return msgText;
 };
 
+const showMessage = async (contract) => {
+	const message = await formMessage(contract);
+	console.log(message);
+};
+
 const sendContractInfo = async (contract, notionUUID, notionClient) => {
 	const sourceEmail = process.env.GMAIL_USER;
 	const desinationEmail = contract.email;
 	const subject = await formSubject(contract);
 	const message = await formMessage(contract);
 
-	sendGmailMessage(sourceEmail, 'sad@bal-inf.ru', subject, message, async () => {
+	sendGmailMessage(sourceEmail, desinationEmail, subject, message, async () => {
 		const commentary = await formComment(contract.email);
-		//await createNotionComment(notionUUID, notionClient, commentary);
+		await createNotionComment(notionUUID, notionClient, commentary);
 	});
 };
 
-module.exports = { sendContractInfo };
+module.exports = { sendContractInfo, showMessage };

@@ -3,10 +3,10 @@ const dotenv = require('dotenv').config({ path: path.resolve(__dirname, './env/.
 const parse = require('./helpers/parse_helper');
 const logger = require('./log/logger');
 const { Contract } = require('./db/db_models');
-const { connectDB, addRecord, updateRecord, disconnectDB } = require('./helpers/db_helper');
+const { connectDB, addRecord, updateRecord, disconnectDB, checkRecordExistanse } = require('./helpers/db_helper');
 const { authorizeGoogle, fetchGoogleSheetsValue } = require('./helpers/google_helper');
 const { authorizeNotion, retrievePage } = require('./helpers/notion_helper');
-const { sendContractInfo } = require('./helpers/mailing_helper');
+const { sendContractInfo, showMessage } = require('./helpers/mailing_helper');
 
 const UNIQUE_FIELD = 'uniqueField';
 const PARSE_CONTRACTS = 'parseContracts';
@@ -21,6 +21,20 @@ const parseData = async (rawResponse, parseType) => {
 
 	return parsedValues;
 };
+
+const filterContracts = async (contracts) => {
+	const newRecords = [];
+	for (const contract of contracts) {
+		if ((contract.uniqueField) && (contract.taskLink) && (contract.email)) {
+			const isExisting = await checkRecordExistanse(Contract, contract, UNIQUE_FIELD);
+			if (!isExisting) {
+				newRecords.push(contract);
+			}
+		}
+	}
+	
+	return newRecords;
+}
 
 const handleContracts = async (contracts, notionClient) => {
 	for (const contract of contracts) {
@@ -56,7 +70,9 @@ const main = async () => {
 
 	await connectDB(process.env.DB_PATH);
 
-	await handleContracts(parsedContracts, notionClient);
+	const newContracts = await filterContracts(parsedContracts);
+
+	await handleContracts(newContracts, notionClient);
 
 	await disconnectDB();
 };

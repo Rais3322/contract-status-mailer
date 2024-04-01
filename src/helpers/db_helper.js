@@ -22,6 +22,11 @@ const disconnectDB = async () => {
 	};
 };
 
+const checkRecordExistanse = async (model, record, key) => { 
+	const existingRecord = await model.findOne({ [key]: record[key] });
+	return existingRecord;
+}
+
 const addRecord = async (model, record, key, callback) => {
 	if (key !== undefined) {
 		const existingRecord = await model.findOne({ [key]: record[key] });
@@ -56,4 +61,4 @@ const retrieveRecord = async (model, key, criteria) => {
 	return result;
 };
 
-module.exports = { connectDB, disconnectDB, addRecord, updateRecord, retrieveRecord };
+module.exports = { connectDB, disconnectDB, addRecord, updateRecord, retrieveRecord, checkRecordExistanse };

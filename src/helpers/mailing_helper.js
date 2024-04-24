@@ -1,7 +1,37 @@
+const nodemailer = require('nodemailer');
 const moment = require('moment');
-const { sendGmailMessage } = require('./google_helper');
+const logger = require('../log/logger');
 const { createNotionComment, formComment } = require('./notion_helper');
 const { fetchOrgName } = require('./kontur_helper');
+
+const sendMailMessage = async (src, dst, sub, msg, callback) => {
+	const transporter = nodemailer.createTransport({
+		host: 'smtp.yandex.ru',
+		port: 465,
+		secure: true,
+		auth: {
+			user: process.env.MAIL_USER,
+			pass: process.env.MAIL_PASS
+		}
+	});
+
+	const mailOptions = {
+		from: src,
+		to: dst,
+		subject: sub,
+		html: msg
+	};
+
+	try {
+		const info = await transporter.sendMail(mailOptions);
+		logger.info('Email sent', info.response)
+		if (typeof callback === 'function') {
+			callback();
+		};
+	} catch (error) {
+		logger.error('Error sending email', error);
+	};
+};
 
 const formSubject = async (contract) => {
 	const contractNumber = contract.contractNumber;
@@ -12,7 +42,7 @@ const formSubject = async (contract) => {
 }
 
 const formMessage = async (contract) => {
-	const orgName = await fetchOrgName(contract.ITN)
+	const orgName = contract.orgName;
 	const contractNumber = contract.contractNumber;
 	const contractDate = moment(contract.contractDate).format('DD.MM.YYYY');
 	const taskNumber = contract.taskNumber;
@@ -51,12 +81,12 @@ const showMessage = async (contract) => {
 };
 
 const sendContractInfo = async (contract, notionUUID, notionClient) => {
-	const sourceEmail = process.env.GMAIL_USER;
+	const sourceEmail = process.env.MAIL_USER;
 	const desinationEmail = contract.email;
 	const subject = await formSubject(contract);
 	const message = await formMessage(contract);
 
-	sendGmailMessage(sourceEmail, desinationEmail, subject, message, async () => {
+	sendMailMessage(sourceEmail, desinationEmail, subject, message, async () => {
 		const commentary = await formComment(contract.email);
 		await createNotionComment(notionUUID, notionClient, commentary);
 	});

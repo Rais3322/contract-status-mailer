@@ -1,7 +1,6 @@
 const path = require('path');
 const dotenv = require('dotenv').config({ path: path.resolve(__dirname, './env/.env') });
 const fs = require('fs/promises');
-const nodemailer = require('nodemailer');
 const { authenticate } = require('@google-cloud/local-auth');
 const { google } = require('googleapis');
 const logger = require('../log/logger');
@@ -60,41 +59,9 @@ const fetchGoogleSheetsValue = async (auth, spreadsheetId, range) => {
 		});
 		return response;
 	} catch (error) {
-		//TODO: handling exception
 		logger.error(error.message);
 		throw error;
 	};
 };
 
-const sendGmailMessage = async (src, dst, sub, msg, callback) => {
-	const transporter = nodemailer.createTransport({
-		service: 'gmail',
-		auth: {
-			type: 'login',
-			user: process.env.GMAIL_USER,
-			pass: process.env.GMAIL_PASS,
-		},
-		tls: {
-			rejectUnauthorized: false,
-		}
-	});
-
-	const mailOptions = {
-		from: `Баланс-Информ <${src}>`,
-		to: dst,
-		subject: sub,
-		html: msg
-	};
-
-	try {
-		const info = await transporter.sendMail(mailOptions);
-		logger.info('Email sent', info.response)
-		if (typeof callback === 'function') {
-			callback();
-		};
-	} catch (error) {
-		logger.error('Error sending email', error);
-	};
-};
-
-module.exports = { authorizeGoogle, fetchGoogleSheetsValue, sendGmailMessage };
+module.exports = { authorizeGoogle, fetchGoogleSheetsValue };
